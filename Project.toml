@@ -13,6 +13,7 @@ MimiNICE = "c24c6efa-5c27-4fc2-84f3-35761679f1fd"
 MimiNICE_revenue_recycle = "bb1cc25e-d242-4601-a743-c9d0cf9cc122"
 MimiRICE2010 = "54b9761e-41d9-11e9-3151-3dc5fec6a45b"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 
 [compat]
 julia = "1.6.7"
