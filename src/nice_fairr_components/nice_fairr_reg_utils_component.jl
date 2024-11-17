@@ -15,6 +15,9 @@ function util_of_pcc(c, eta)
 
 end
 
+
+
+
 @defcomp nice_fairr_reg_utils begin
 
     regions         = Index()                                     # Index for RICE regions.
