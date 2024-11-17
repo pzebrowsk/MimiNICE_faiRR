@@ -26,7 +26,7 @@ end
     eta             = Parameter(index=[regions])                  # Elasticities of marginal utility of consumption for regions.
     rho             = Parameter()                                 # Pure rate of time preference.
     quintile_pop    = Parameter(index=[time, regions])            # Quintile population levels for each region.
-    quintile_c      = Parameter(index=[time, regions, quintiles]) # Post-damage, post-abatement cost quintile consumption (thousands 2005 USD yr⁻¹).
+    quintile_c      = Parameter(index=[time, regions, quintiles]) # Post-damage, post-abatement cost, post-recycle quintile consumption (thousands 2005 USD yr⁻¹).
 
     indiv_utils     = Variable(index=[time, regions, quintiles])  # Utility of individual person 
     reg_utils       = Variable(index=[time, regions])             # Aggregate utility of individual regions (discounted)
