@@ -1,5 +1,5 @@
 module MimiNICE_faiRR
 
-# Write your package code here.
+greet() = print("Hi")
 
 end
