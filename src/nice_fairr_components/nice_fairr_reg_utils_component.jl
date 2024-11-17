@@ -35,16 +35,6 @@ end
 
         for r in d.regions
             v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c[t,r,:], p.eta[r])
-            # # # v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c[t,r,:], p.eta[r])
-            # # for q in d.quintiles
-            # #     v.indiv_utils[t, r, q] = util_of_pcc(p.quintile_c[t,r,q], p.eta[r])
-            # # end
-
-            # if p.eta[r] != 1
-            #     v.indiv_utils[t, r, :] = (p.quintile_c[t,r,:].^ (1.0 - p.eta[r])) ./ (1.0 - p.eta[r])
-            # else
-            #     v.indiv_utils[t, r, :] = log.(p.quintile_c[t,r,:])
-            # end
 
             v.reg_utils[t, r] = sum(v.indiv_utils[t,r,:] .* p.quintile_pop[t,r]) ./ (1.0 + p.rho)^(10*(t.t-1))
 
@@ -59,24 +49,5 @@ end
     end
 
 end #end defcomp
-
-
-## this was before @defcomp
-# """
-#     util_of_pcc(c, eta)
-
-# Function transforming per capita consumption into utility, assuming constant elasticity of marginal utility of consumption.
-#         c:      per capita consumption
-#         eta:    elasticity of marginal utility of consumption (reflect the diminishing returns form marginal increases of per capita consumption)
-# """
-# function util_of_pcc(c, eta)
-    
-#     if eta != 1
-#         return (c.^ (1.0 - eta)) ./ (1.0 - eta)
-#     else
-#         return log.(c)
-#     end
-
-# end
 
 
