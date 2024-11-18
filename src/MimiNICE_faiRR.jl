@@ -1,7 +1,10 @@
 module MimiNICE_faiRR
 
 using MimiNICE_revenue_recycle
+
 using Mimi 
+using DataFrames
+using CSVFiles
 using Revise
 
 include(joinpath("nice_fairr_components", "nice_fairr_reg_utils_component.jl"))     # component with individual and regional utilities, calculated as Atkinson function (or constant relative risk aversion (CRRA) function,cf. Adler 2017 Methods) of per capita consumption with region-specific elasticities (eta, marginal utility of consumption).
@@ -84,7 +87,7 @@ function get_model()
     # Set parameters of MimiNICE_revenue_recycle
     update_param!(m, :damage_elasticity, damage_elasticity)
     update_param!(m, :quintile_income_shares, income_distributions)
-    update_param!(m, :recycle_share, recycle_share)
+    update_param!(m, :recycle_share, quintile_recycle_share)       
     update_param!(m, :rho, ρ)
     update_param!(m, :eta, η)
 
