@@ -1,6 +1,6 @@
 using Mimi
 using Revise
-#using MimiNICE_faiRR
+using MimiNICE_faiRR
 
 m = MimiNICE_faiRR.get_model()
 
