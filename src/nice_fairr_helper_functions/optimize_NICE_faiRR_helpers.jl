@@ -6,12 +6,15 @@ Possible decision variables: carbon tax rates ($/ton CO2), saving rates (fractio
 Carbon tax rates define optimal mitigation rates: optimal mitigation rate is the one for which marginal abatement cost equals carbon tax (then you would rather stop mitigating and start paying the tax for unmitigated emissions).
 
 NOTE: Currently, this version does not support regionally differentiated carbon taxes (only uniform global tax). Implementing local carbon tax requires modification in nice_revenue_recycle_component_time_varying.jl in MimiNICE_revenue_recycle.jl. Change global_carbon_tax = Parameter(index=[time]) to carbon_tax = Parameter(index=[time,regions]) and v.tax_revenue (line 73). ]
+
+TO DO: consider saving results of optimization as DataFrame (currently plain .csv)
 =#
 
 
 using Missings
 using NLopt
 using DelimitedFiles
+#using DataFrames
 using Mimi
 using Revise
 
@@ -232,10 +235,22 @@ function optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg",
     println("")
 
     # save results
+    run(m)      #not needed?
+
+    #save all decision variables (not only active controls) so that the model could be re-runned from saved results (active controls without a mask are useless).
+    if use_global_carbon_tax
+        opt_dec_vars =  [m[:nice_recycle, :global_carbon_tax] m[:nice_neteconomy, :S]] #global carbon tax stored in the first column 
+        # opt_dec_vars =  DataFrame([m[:nice_recycle, :global_carbon_tax] m[:nice_neteconomy, :S]], :auto) #this works OK but index (years) and column names need to be added
+    else
+        #opt_dec_vars =  [m[:nice_recycle, :tax] m[:nice_neteconomy, :S]]     # WARNING: Requires nice_recycle to be updated with region-specific tax
+    end
+    
     if !isnothing(save_file_path)
         mkpath(dirname(save_file_path))
-        writedlm(save_file_path, opt_controls, ',')
+        writedlm(save_file_path, opt_dec_vars, ',')     #this works for CSV
+        #save(save_file_path, opt_dec_vars) #This works with saving DataFrames
     end
+
 
     return (opt_swf_val, opt_controls, ref_conv)
 
