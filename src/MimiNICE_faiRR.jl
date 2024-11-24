@@ -110,9 +110,11 @@ function get_model()
     # Add regional utilities component.
     add_comp!(m, nice_fairr_reg_utils, after = :nice_recycle)
     
+    
     # Set parameters for nice_fairr_reg_utils.
     set_param!(m, :nice_fairr_reg_utils, :eta, ones(length(dim_keys(m, :regions))).* η) # in principle, η can be region-specific. Here we keep them equal for all regions
     set_param!(m, :nice_fairr_reg_utils, :rho, ρ)
+    set_param!(m, :nice_fairr_reg_utils, :u_zero, zeros(length(dim_keys(m, :time)), length(dim_keys(m, :regions)))) #u_zero can be also defined as utility of poverty line consumption (which may change over time and differ by regions)
     update_param!(m, :nice_fairr_reg_utils, :quintile_pop, quintile_population)
 
     
