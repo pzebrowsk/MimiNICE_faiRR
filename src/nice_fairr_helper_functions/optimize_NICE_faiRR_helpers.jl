@@ -139,7 +139,7 @@ end
 """
     optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true, global_opt_algorithm::Symbol = :LN_SBPLX, local_opt_algorithm::Symbol = :LN_SBPLX, global_stop_time = 600, local_stop_time = 300, global_tolerance = 1e-8, local_tolerance = 1e-8, save_file_path = nothing)
 
-Function optimizing SWF defined by aggr_fun in the model m and saving the results. 
+Function optimizing SWF defined by aggr_fun in the model m and saving the results (optimal policy [tax MIU S]). Returns optimal controls (i.e. active decision vars only) and optimization status.
 
 NOTES:
 For details of optimization algorithm (:symbol) see http://ab-initio.mit.edu/wiki/index.php/NLopt_Algorithms
@@ -239,16 +239,16 @@ function optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg",
 
     #save all decision variables (not only active controls) so that the model could be re-runned from saved results (active controls without a mask are useless).
     if use_global_carbon_tax
-        opt_dec_vars =  [m[:nice_recycle, :global_carbon_tax] m[:nice_neteconomy, :S]] #global carbon tax stored in the first column 
-        # opt_dec_vars =  DataFrame([m[:nice_recycle, :global_carbon_tax] m[:nice_neteconomy, :S]], :auto) #this works OK but index (years) and column names need to be added
+        opt_policy_vars =  [m[:nice_recycle, :global_carbon_tax] m[:emissions, :MIU] m[:nice_neteconomy, :S]] #global carbon tax stored in the first column 
+        # opt_policy_vars =  DataFrame([m[:nice_recycle, :global_carbon_tax] m[:nice_neteconomy, :S]], :auto) #this works OK but index (years) and column names need to be added
     else
-        #opt_dec_vars =  [m[:nice_recycle, :tax] m[:nice_neteconomy, :S]]     # WARNING: Requires nice_recycle to be updated with region-specific tax
+        #opt_policy_vars =  [m[:nice_recycle, :tax] m[:emissions, :MIU] m[:nice_neteconomy, :S]]     # WARNING: Requires nice_recycle to be updated with region-specific tax
     end
     
     if !isnothing(save_file_path)
         mkpath(dirname(save_file_path))
-        writedlm(save_file_path, opt_dec_vars, ',')     #this works for CSV
-        #save(save_file_path, opt_dec_vars) #This works with saving DataFrames
+        writedlm(save_file_path, opt_policy_vars, ',')     # this works for CSV
+        # save(save_file_path, opt_policy_vars)  # This works with saving DataFrames
     end
 
 
