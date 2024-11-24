@@ -38,7 +38,7 @@ end
 
 
         for r in d.regions
-            v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c[t,r,:], p.eta[r]) - u_zero[t,r]
+            v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c[t,r,:], p.eta[r]) .- p.u_zero[t,r]
 
             v.reg_utils[t, r] = sum(v.indiv_utils[t,r,:] .* p.quintile_pop[t,r]) ./ (1.0 + p.rho)^(10*(t.t-1))
 
