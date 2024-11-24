@@ -38,7 +38,7 @@ end
 
 
 """
-    create_SWF_and_init_controls(m::Model, aggr_fun::Function; utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true)
+    create_SWF_and_init_controls(m::Model, aggr_fun::Function; revenue_recycle = true, utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true)
 
 Function creating a social welfare function (SWF) for model m by aggregating regional utilities with aggregating function aggr_fun. utility_type = { "indiv" | "reg" | "total_reg" } (cf. different types of regional utilities in nice_fairr_reg_utils_component.jl). Time steps for which controls are to be optimized are given by active_time_steps (set to "all" by default, in which case no exclusions are made). Controls to be optimized are give by active_controls = {"tax" | "savings" | "tax_and_savings"}. By default, use_global_carbon_tax = true, in which case in each individual time step carbon tax rates are equal for all regions. If use_global_carbon_tax = false, carbon tax rates differ accross regions. 
 
@@ -47,12 +47,15 @@ In addition to SWF, function returns vectors of initial controls init_controls a
 
 [WARNING! carbon_tax_type = "local" not implemented yet. Local carbon tax requires modification in nice_revenue_recycle_component_time_varying.jl in MimiNICE_revenue_recycle.jl. Change global_carbon_tax = Parameter(index=[time]) to carbon_tax = Parameter(index=[time,regions]) and v.tax_revenue (line 73). ]
 
-NOTE: Set the initial values of decision variables in m (both active and inactive) before calling create_SWF(m, aggr_fun). (E.g., set saving rates or a given trajectory of tax for 2C scenario before calling this function). A vector of initial controls (argument of SWF) will be constructed from values of active decision variables. Model m must have status Built: true before passing it th this function (e.g., run(m) first).
+NOTES: 
+1. Set the initial values of decision variables in m (both active and inactive) before calling create_SWF(m, aggr_fun). (E.g., set saving rates or a given trajectory of tax for 2C scenario before calling this function). A vector of initial controls (argument of SWF) will be constructed from values of active decision variables. Model m must have status Built: true before passing it th this function (e.g., run(m) first).
+2. In case of revenue_recycle = false, optimal MIU is calculated from carbon tax (as in the case revenue_recycle = true), but then gloabl_carbon_tax is set to zero so that there is no revenue to recycel, which is equivalent to returning tax in proportion to consumption (i.e., no recycling).
 
 TO DO:
 1. Add selection of regions (default active_regions = "all")? Same mechanism as active_time_steps. (If excluding regions from optimization makes sense.) 
+2. Check if option active_controls = "savings" work properly (in particular, if we set carbon tax = 0, does it result in MIU = 0?)
 """
-function create_SWF_and_init_controls(m::Model, aggr_fun::Function; utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true)
+function create_SWF_and_init_controls(m::Model, aggr_fun::Function; revenue_recycle = true, utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true)
 
     # initial decision variables 
     if use_global_carbon_tax
@@ -112,17 +115,29 @@ function create_SWF_and_init_controls(m::Model, aggr_fun::Function; utility_type
                 dec_vars[dec_vars_on_mask .== 1] = x
                 #update global tax
                 gct = dec_vars[:,1]     #Missing.disallowmissing here?
-                set_param!(m, :global_carbon_tax, gct)
+                # set_param!(m, :global_carbon_tax, gct)
+                update_param!(m, :global_carbon_tax, gct) #set_param!(m, :global_carbon_tax, gct)
                 
                 #calculate and update mius
                 miu = miu_from_global_tax(m, gct)
                 update_param!(m, :MIU, miu)
+
+                if revenue_recycle == false
+                    update_param!(m, :global_carbon_tax, zeros(length(dim_keys(m, :time))))     # no revenue recycle <=> tax refund = tax paid <=> no tax revenue to redistribute
+                end
                 
                 #update savings
                 update_param!(m, :S, dec_vars[:, end-length(dim_keys(m, :regions))+1:end])   
 
                 run(m)
-                return aggr_fun(m[:nice_fairr_reg_utils, utils_symbol])
+                swf_val = aggr_fun(m[:nice_fairr_reg_utils, utils_symbol])
+
+                if revenue_recycle == false
+                    # set_param!(m, :global_carbon_tax, gct)
+                    update_param!(m, :global_carbon_tax, gct)   # after we fooled nice_recycle comoponent that there is no tax to redistribute we need to re-set gloabl carbon tax
+                end
+
+                return swf_val
             end
         else
             function(x)
@@ -137,7 +152,7 @@ end
 
 
 """
-    optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true, global_opt_algorithm::Symbol = :LN_SBPLX, local_opt_algorithm::Symbol = :LN_SBPLX, global_stop_time = 600, local_stop_time = 300, global_tolerance = 1e-8, local_tolerance = 1e-8, save_file_path = nothing)
+    optimize_NICE(m::Model, aggr_fun::Function; revenue_recycle = true, utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true, global_opt_algorithm::Symbol = :LN_SBPLX, local_opt_algorithm::Symbol = :LN_SBPLX, global_stop_time = 600, local_stop_time = 300, global_tolerance = 1e-8, local_tolerance = 1e-8, save_file_path = nothing)
 
 Function optimizing SWF defined by aggr_fun in the model m and saving the results (optimal policy [tax MIU S]). Returns optimal controls (i.e. active decision vars only) and optimization status.
 
@@ -145,7 +160,7 @@ NOTES:
 For details of optimization algorithm (:symbol) see http://ab-initio.mit.edu/wiki/index.php/NLopt_Algorithms
 GN_DIRECT_L (and other global optimization algorithms) appear to be working worse than local algorithms. In the first we use LN_SBPLX by default (appears the fastes for our problem), though it is not a global optimization algorithm (according to NLopt page).
 """
-function optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true, global_opt_algorithm::Symbol = :LN_SBPLX, local_opt_algorithm::Symbol = :LN_SBPLX, global_stop_time = 600, local_stop_time = 300, global_tolerance = 1e-8, local_tolerance = 1e-8, save_file_path = nothing)
+function optimize_NICE(m::Model, aggr_fun::Function; revenue_recycle = true, utility_type = "total_reg", active_time_steps = "all", active_controls = "tax_and_savings", use_global_carbon_tax = true, global_opt_algorithm::Symbol = :LN_SBPLX, local_opt_algorithm::Symbol = :LN_SBPLX, global_stop_time = 600, local_stop_time = 300, global_tolerance = 1e-8, local_tolerance = 1e-8, save_file_path = nothing)
     #Setup summary
     println("")
     println("Optimization of the NICE model")
@@ -154,7 +169,7 @@ function optimize_NICE(m::Model, aggr_fun::Function; utility_type = "total_reg",
     println("")
 
     #Generate SWF and get initial controls (from initial state of m)
-    swf, x_0, upper_bounds = create_SWF_and_init_controls(m, aggr_fun, utility_type = utility_type, active_time_steps = active_time_steps, active_controls = active_controls, use_global_carbon_tax = use_global_carbon_tax)
+    swf, x_0, upper_bounds = create_SWF_and_init_controls(m, aggr_fun, revenue_recycle = revenue_recycle, utility_type = utility_type, active_time_steps = active_time_steps, active_controls = active_controls, use_global_carbon_tax = use_global_carbon_tax)
 
     n_objectives = length(x_0)
 
