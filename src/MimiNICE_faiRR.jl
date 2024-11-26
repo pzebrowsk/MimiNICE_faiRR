@@ -28,7 +28,7 @@ export get_model
 η = 1.5
 
 # Income elasticity of climate damages ξ (1 = proportional to income, -1 = inversely proportional to income).
-damage_elasticity = 1.0  # ξ = 1 used in (Budolfson et al 2021). It useful to keep it here for comparability of results, but we want to use ξ = 1.5. Update this param before generating new results.
+damage_elasticity = 1.0  # ξ = 1 used in (Budolfson et al 2021). It useful to keep it here for comparability of results, but we want to use ξ = -1. Update this param before generating new results.
 
 # Share of carbon tax revenue that is lost and cannot be recycled (1 = 100% of revenue lost, 0 = nothing lost)
 lost_revenue_share = 0.0

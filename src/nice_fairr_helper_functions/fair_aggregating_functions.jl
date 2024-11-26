@@ -3,8 +3,8 @@ using Missings
 
 #Atkinson function does not work properly for negative x
 # shift utiliities by 1200 so that all regional utilites in NICE are positive (find more elegant solution)
-function Atkinson_fun(x, gamma, shift = 1200)
-    x = disallowmissing(x) + shift*ones(size(x))
+function Atkinson_fun(x, gamma)
+    #x = disallowmissing(x) 
     if gamma != 1
         return sum((x.^ (1.0 - gamma)) ./ (1.0 - gamma))
     else

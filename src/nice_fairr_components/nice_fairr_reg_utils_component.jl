@@ -29,7 +29,7 @@ end
     quintile_c      = Parameter(index=[time, regions, quintiles]) # Post-damage, post-abatement cost, post-recycle quintile consumption (thousands 2005 USD yr⁻¹).
     u_zero          = Parameter(index=[time, regions])            # Reference utility levels for zero-in procedure (see Adler 2017, DOI: 10.1038/NCLIMATE3298)
 
-    indiv_utils     = Variable(index=[time, regions, quintiles])  # Utility of individual person 
+    indiv_utils     = Variable(index=[time, regions, quintiles])  # Utility of individual person (average, within a quintile)
     reg_utils       = Variable(index=[time, regions])             # Aggregate utility of individual regions (discounted)
     total_reg_utils = Variable(index=[regions])                   # Total (discounted) aggregate utility of individual regions
 
@@ -38,7 +38,9 @@ end
 
 
         for r in d.regions
+            ####v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c_post[t,r,:], p.eta[r]) .- p.u_zero[t,r] #DELETE!
             v.indiv_utils[t, r, :] = util_of_pcc(p.quintile_c[t,r,:], p.eta[r]) .- p.u_zero[t,r]
+            #v.indiv_utils[t, r, :] = util_of_pcc((p.quintile_c[t,r,:]./p.quintile_pop[t,r]), p.eta[r]) .- p.u_zero[t,r] #quintile_c is not per capita, need to divide by quintile_pop
 
             v.reg_utils[t, r] = sum(v.indiv_utils[t,r,:] .* p.quintile_pop[t,r]) ./ (1.0 + p.rho)^(10*(t.t-1))
 
