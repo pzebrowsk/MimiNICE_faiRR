@@ -15,3 +15,11 @@ end
 function type_2_achievement_fun(x, alpha)
     return minimum(x) + alpha * sum(x)
 end
+
+# this implementation of Gini index may not work for arrays (only for 1D vectors), elements of x assumed to be non-negative
+function Gini(x)
+    return sum([abs(a - b) for a in x, b in x])/(2*length(x)*sum(x))
+end
+
+
+
